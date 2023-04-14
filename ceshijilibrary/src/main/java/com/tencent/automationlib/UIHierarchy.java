@@ -21,22 +21,6 @@ public class UIHierarchy {
     private static Class<?> windowManager = null;
     private static String windowManagerClassName;
 
-//    private UIHierarchy() throws ClassNotFoundException {
-//        if (AndroidVersion.isJellyBeanMr1()) {
-//            windowManagerString = "sDefaultWindowManager";
-//        } else if (AndroidVersion.isHoneycomb()) {
-//            windowManagerString = "sWindowManager";
-//        } else {
-//            windowManagerString = "mWindowManager";
-//        }
-//        if (AndroidVersion.isJellyBeanMr1()) {
-//            windowManagerClassName = "android.view.WindowManagerGlobal";
-//        } else {
-//            windowManagerClassName = "android.view.WindowManagerImpl";
-//        }
-//        windowManager = Class.forName(windowManagerClassName);
-//    }
-
     //app内部获取RootView方式
     public static View[] getWindowDecorViews(){
 
@@ -92,6 +76,15 @@ public class UIHierarchy {
             rootJson.put("id", System.identityHashCode(view));
             rootJson.put("class", view.getClass().getName());
             rootJson.put("text", view instanceof TextView ? ((TextView) view).getText().toString() : "");
+            rootJson.put("ContentDescription", view.getContentDescription() != null ? view.getContentDescription().toString() : "");
+            rootJson.put("visible", view.getVisibility());
+            rootJson.put("coord",view.getX() + " " + view.getY());
+            rootJson.put("dimensions", view.getWidth() + " " + view.getHeight());
+            rootJson.put("isClickable", view.isClickable());
+            rootJson.put("isFocusable", view.isFocusable());
+            rootJson.put("isLongClickable", view.isLongClickable());
+            rootJson.put("isSeclected", view.isSelected());
+            rootJson.put("canScroll", view.canScrollHorizontally(-1)+" "+view.canScrollHorizontally(1)+" "+view.canScrollVertically(-1)+" "+view.canScrollVertically(1));
             rootJson.put("children", generateChildrenJson(view));
         } catch (JSONException e) {
             e.printStackTrace();
@@ -111,6 +104,15 @@ public class UIHierarchy {
                     childJson.put("id", System.identityHashCode(child));
                     childJson.put("class", child.getClass().getName());
                     childJson.put("text", child instanceof TextView ? ((TextView) child).getText().toString() : "");
+                    childJson.put("ContentDescription",child.getContentDescription() != null ? child.getContentDescription().toString() : "");
+                    childJson.put("visible", child.getVisibility());
+                    childJson.put("coord", child.getX() + " " + child.getY());
+                    childJson.put("dimensions", child.getWidth() + " " + child.getHeight());
+                    childJson.put("isClickable", child.isClickable());
+                    childJson.put("isFocusable", child.isFocusable());
+                    childJson.put("isLongClickable", child.isLongClickable());
+                    childJson.put("isSeclected", child.isSelected());
+                    childJson.put("canScroll", child.canScrollHorizontally(-1)+" "+child.canScrollHorizontally(1)+" "+child.canScrollVertically(-1)+" "+child.canScrollVertically(1));
                     childJson.put("children", generateChildrenJson(child));
                 } catch (JSONException e) {
                     e.printStackTrace();
