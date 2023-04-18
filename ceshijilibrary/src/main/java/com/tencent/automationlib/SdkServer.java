@@ -48,8 +48,12 @@ public class SdkServer {
                 System.out.println("接收到来自客户端的消息：" + clientMsg);
                 if (clientMsg.length()> 0) {
                     String ans = handleMessage(clientMsg);
+                    String packageName = UIHierarchy.getPackageName();
                     PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+                    out.println(packageName);
+
                     out.println(ans);
+
                 }
             }
         } catch (IOException e) {

@@ -2,6 +2,7 @@ package com.tencent.automationlib;
 
 import static android.content.ContentValues.TAG;
 
+import android.content.Context;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,6 +13,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 
 
@@ -83,6 +86,7 @@ public class UIHierarchy {
             rootJson.put("isClickable", view.isClickable());
             rootJson.put("isFocusable", view.isFocusable());
             rootJson.put("isLongClickable", view.isLongClickable());
+
             rootJson.put("isSeclected", view.isSelected());
             rootJson.put("canScroll", view.canScrollHorizontally(-1)+" "+view.canScrollHorizontally(1)+" "+view.canScrollVertically(-1)+" "+view.canScrollVertically(1));
             rootJson.put("children", generateChildrenJson(view));
@@ -123,6 +127,19 @@ public class UIHierarchy {
         return childrenJson;
     }
 
+    public static String getPackageName() {
+        try {
+            Class<?> activityThreadClass = Class.forName("android.app.ActivityThread");
+            Method currentApplicationMethod = activityThreadClass.getMethod("currentApplication");
+            Object currentApplication = currentApplicationMethod.invoke(null);
+            Method getPackageNameMethod = currentApplication.getClass().getMethod("getPackageName");
+            return (String) getPackageNameMethod.invoke(currentApplication);
+        } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException |
+                 InvocationTargetException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 
 }
 
