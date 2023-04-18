@@ -51,7 +51,6 @@ public class SdkServer {
                     String packageName = UIHierarchy.getPackageName();
                     PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
                     out.println(packageName);
-
                     out.println(ans);
 
                 }
