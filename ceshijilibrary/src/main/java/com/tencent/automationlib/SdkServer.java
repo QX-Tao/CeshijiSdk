@@ -28,7 +28,7 @@ public class SdkServer {
         // TODO: 处理来自无障碍服务App的消息
         if("开始收集".equals(message)){
             View[] windowDecorViews = UIHierarchy.getWindowDecorViews();
-            String viewsString = UIHierarchy.generateHierarchyJson(windowDecorViews[0]);
+            String viewsString = UIHierarchy.generateHierarchyJson(UIHierarchy.getRecentDecorView(windowDecorViews));
             Log.d("TAG", "JSON: " + viewsString);
             return viewsString;
         }

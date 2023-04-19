@@ -3,6 +3,7 @@ package com.tencent.automationlib;
 import static android.content.ContentValues.TAG;
 
 import android.content.Context;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,6 +17,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 
 public class UIHierarchy {
@@ -23,6 +26,12 @@ public class UIHierarchy {
     private static String windowManagerString;
     private static Class<?> windowManager = null;
     private static String windowManagerClassName;
+
+    private static final List<String> DECOR_VIEWS = Arrays.asList(
+            "com.android.internal.policy.DecorView",
+            "com.android.internal.policy.PhoneWindow$DecorView",
+            "com.android.internal.policy.impl.MultiPhoneWindow$MultiPhoneDecorView",
+            "com.android.internal.policy.impl.PhoneWindow$DecorView");
 
     //app内部获取RootView方式
     public static View[] getWindowDecorViews(){
@@ -69,6 +78,52 @@ public class UIHierarchy {
 //            Logger.INSTANCE.exception(TAG, e);
         }
         return null;
+    }
+
+    private static boolean isDecorView(View view) {
+        if (view == null) {
+            return false;
+        }
+        final String clazzName = view.getClass().getName();
+        if (!TextUtils.isEmpty(clazzName)) {
+            return DECOR_VIEWS.contains(clazzName)
+                    || clazzName.endsWith("ScrollView")
+                    || clazzName.endsWith("ViewPager");
+        }
+        return false;
+    }
+
+    public static View getRecentDecorView(View[] views) {
+        if (views == null) {
+            return null;
+        }
+
+        final View[] decorViews = new View[views.length];
+        int i = 0;
+        for (View view : views) {
+            if (isDecorView(view)) {
+                decorViews[i] = view;
+                i++;
+            }
+        }
+        return getRecentContainer(decorViews);
+    }
+
+    private static View getRecentContainer(View[] views) {
+        View container = null;
+        long drawingTime = 0;
+
+        if (views == null) {
+            return null;
+        }
+
+        for (View view : views) {
+            if (view != null && view.isShown() && view.hasWindowFocus() && view.getDrawingTime() > drawingTime) {
+                container = view;
+                drawingTime = view.getDrawingTime();
+            }
+        }
+        return container;
     }
 
 
