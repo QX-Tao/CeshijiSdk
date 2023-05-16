@@ -4,9 +4,11 @@ import static android.content.ContentValues.TAG;
 
 import android.content.Context;
 import android.text.TextUtils;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.WebView;
 import android.widget.TextView;
 
 import org.json.JSONArray;
@@ -75,7 +77,6 @@ public class UIHierarchy {
             return result;
         } catch (Throwable e) {
             Log.e(TAG, "Error occurred", e);
-//            Logger.INSTANCE.exception(TAG, e);
         }
         return null;
     }
@@ -136,12 +137,12 @@ public class UIHierarchy {
             rootJson.put("text", view instanceof TextView ? ((TextView) view).getText().toString() : "");
             rootJson.put("ContentDescription", view.getContentDescription() != null ? view.getContentDescription().toString() : "");
             rootJson.put("visible", view.getVisibility());
+            rootJson.put("isVisibleToUser", isVisibleToUser(view));
             rootJson.put("coord",view.getX() + " " + view.getY());
             rootJson.put("dimensions", view.getWidth() + " " + view.getHeight());
             rootJson.put("isClickable", view.isClickable());
             rootJson.put("isFocusable", view.isFocusable());
             rootJson.put("isLongClickable", view.isLongClickable());
-
             rootJson.put("isSeclected", view.isSelected());
             rootJson.put("canScroll", view.canScrollHorizontally(-1)+" "+view.canScrollHorizontally(1)+" "+view.canScrollVertically(-1)+" "+view.canScrollVertically(1));
             rootJson.put("children", generateChildrenJson(view));
@@ -165,6 +166,7 @@ public class UIHierarchy {
                     childJson.put("text", child instanceof TextView ? ((TextView) child).getText().toString() : "");
                     childJson.put("ContentDescription",child.getContentDescription() != null ? child.getContentDescription().toString() : "");
                     childJson.put("visible", child.getVisibility());
+                    childJson.put("isVisibleToUser", isVisibleToUser(view));
                     childJson.put("coord", child.getX() + " " + child.getY());
                     childJson.put("dimensions", child.getWidth() + " " + child.getHeight());
                     childJson.put("isClickable", child.isClickable());
@@ -194,6 +196,80 @@ public class UIHierarchy {
             e.printStackTrace();
         }
         return null;
+    }
+
+    /**
+     * 对指定的界面元素是否用户可见.
+     *
+     * @param view 界面元素
+     * @return 可见返回true，否则返回false
+     */
+    public static boolean isVisibleToUser(View view) {
+        try {
+            final int[] xyView = new int[2];
+            final int[] xyParent = new int[2];
+
+            if (view == null) {
+                return false;
+            }
+
+            final float viewHeight = view.getHeight();
+            final View parent = getScrollOrListParent(view);
+            view.getLocationOnScreen(xyView);
+
+            if (parent == null) {
+                xyParent[1] = 0;
+            } else {
+                parent.getLocationOnScreen(xyParent);
+            }
+
+            return !((xyView[1] + (viewHeight / 2.0f) > getScrollListWindowHeight(parent)) || (xyView[1] + (viewHeight / 2.0f) < xyParent[1]));
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+
+    private static View getScrollOrListParent(View view) {
+        if (!(view instanceof android.widget.AbsListView) && !(view instanceof android.widget.ScrollView) && !(view instanceof WebView)) {
+            try {
+                return getScrollOrListParent((View) view.getParent());
+            } catch (Throwable e) {
+                return null;
+            }
+        } else {
+            return view;
+        }
+    }
+
+    private static float getScrollListWindowHeight(View parent) {
+        final int[] xyParent = new int[2];
+        final float windowHeight;
+
+        if (parent == null) {
+            windowHeight = getDisplayHeight(getApplicationContext());
+        } else {
+            parent.getLocationOnScreen(xyParent);
+            windowHeight = xyParent[1] + parent.getHeight();
+        }
+        return windowHeight;
+    }
+
+    public static int getDisplayHeight(Context context) {
+        DisplayMetrics metrics = context.getResources().getDisplayMetrics();
+        return metrics.heightPixels;
+    }
+
+    public static Context getApplicationContext(){
+        Context context = null;
+        try {
+            Class<?> activityThreadClass = Class.forName("android.app.ActivityThread");
+            Method method = activityThreadClass.getMethod("currentApplication");
+            context = (Context) method.invoke(null, (Object[]) null);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return context;
     }
 
 }
