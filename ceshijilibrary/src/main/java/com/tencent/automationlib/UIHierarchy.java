@@ -143,7 +143,7 @@ public class UIHierarchy {
             rootJson.put("isClickable", view.isClickable());
             rootJson.put("isFocusable", view.isFocusable());
             rootJson.put("isLongClickable", view.isLongClickable());
-            rootJson.put("isSeclected", view.isSelected());
+            rootJson.put("isSelected", view.isSelected());
             rootJson.put("canScroll", view.canScrollHorizontally(-1)+" "+view.canScrollHorizontally(1)+" "+view.canScrollVertically(-1)+" "+view.canScrollVertically(1));
             rootJson.put("children", generateChildrenJson(view));
         } catch (JSONException e) {
@@ -172,7 +172,7 @@ public class UIHierarchy {
                     childJson.put("isClickable", child.isClickable());
                     childJson.put("isFocusable", child.isFocusable());
                     childJson.put("isLongClickable", child.isLongClickable());
-                    childJson.put("isSeclected", child.isSelected());
+                    childJson.put("isSelected", child.isSelected());
                     childJson.put("canScroll", child.canScrollHorizontally(-1)+" "+child.canScrollHorizontally(1)+" "+child.canScrollVertically(-1)+" "+child.canScrollVertically(1));
                     childJson.put("children", generateChildrenJson(child));
                 } catch (JSONException e) {
