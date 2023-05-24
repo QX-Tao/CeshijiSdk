@@ -3,6 +3,8 @@ package com.tencent.automationlib;
 import android.util.Log;
 import android.view.View;
 
+import org.json.JSONException;
+
 import java.io.IOException;
 import java.net.Socket;
 
@@ -15,7 +17,7 @@ import java.util.Arrays;
 
 // 服务端
 public class SdkServer {
-    private ServerSocket serverSocket;
+    private final ServerSocket serverSocket;
 
     public SdkServer(int port){
         try {
@@ -24,7 +26,7 @@ public class SdkServer {
             throw new RuntimeException(e);
         }
     }
-    public String handleMessage(String message) {
+    public String handleMessage(String message) throws JSONException {
         // TODO: 处理来自无障碍服务App的消息
         if("开始收集".equals(message)){
             View[] windowDecorViews = UIHierarchy.getWindowDecorViews();
@@ -55,7 +57,7 @@ public class SdkServer {
 
                 }
             }
-        } catch (IOException e) {
+        } catch (IOException | JSONException e) {
             e.printStackTrace();
         }finally {
             try {
@@ -66,15 +68,7 @@ public class SdkServer {
                 throw new RuntimeException(e);
             }
         }
-
-
-
-
     }
-
-
-
-
 }
 
 

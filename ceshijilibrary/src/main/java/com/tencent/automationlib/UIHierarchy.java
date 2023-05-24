@@ -129,8 +129,13 @@ public class UIHierarchy {
 
 
     // 遍历控件树生成JSON格式字符串
-    public static String generateHierarchyJson(View view) {
+    public static String generateHierarchyJson(View view) throws JSONException {
         JSONObject rootJson = new JSONObject();
+        if(view instanceof WebView){
+            ((WebView) view).addJavascriptInterface(JsBridge.getInstance(),"JsBridge");
+            JsBridge.getInstance().injectJs(view);
+            rootJson.put("wvDom",JsBridge.getInstance().getWebViewJson());
+        }
         try {
             rootJson.put("id", System.identityHashCode(view));
             rootJson.put("class", view.getClass().getName());
@@ -153,13 +158,18 @@ public class UIHierarchy {
     }
 
     // 嵌套遍历所有View，最终生成JSON字符串
-    private static JSONArray generateChildrenJson(View view) {
+    private static JSONArray generateChildrenJson(View view) throws JSONException {
         JSONArray childrenJson = new JSONArray();
         if (view instanceof ViewGroup) {
             ViewGroup viewGroup = (ViewGroup) view;
+            JSONObject childJson = new JSONObject();
             for (int i = 0; i < viewGroup.getChildCount(); i++) {
                 View child = viewGroup.getChildAt(i);
-                JSONObject childJson = new JSONObject();
+                if(child instanceof WebView){
+                    ((WebView) child).addJavascriptInterface(JsBridge.getInstance(),"JsBridge");
+                    JsBridge.getInstance().injectJs(child);
+                    childJson.put("wvDom",JsBridge.getInstance().getWebViewJson());
+                }
                 try {
                     childJson.put("id", System.identityHashCode(child));
                     childJson.put("class", child.getClass().getName());
@@ -272,5 +282,31 @@ public class UIHierarchy {
         return context;
     }
 
+    // Hook WebView的控件ID
+    private static void hookWebView(WebView webView) {
+        try {
+            Class<?> clazz = Class.forName("android.webkit.WebView");
+            Method method = clazz.getDeclaredMethod("getWebViewProvider");
+            method.setAccessible(true);
+            Object webViewProvider = method.invoke(webView);
+            if (webViewProvider != null) {
+                Class<?> webViewProviderClass = Class.forName("android.webkit.WebViewProvider");
+                Field field = webViewProviderClass.getDeclaredField("mContentsClientBridge");
+                field.setAccessible(true);
+                Object contentsClientBridge = field.get(webViewProvider);
+                if (contentsClientBridge != null) {
+                    Class<?> contentsClientBridgeClass = Class.forName("android.webkit.WebViewClient$WebViewClientCompatImpl$ContentsClientBridge");
+                    Method method1 = contentsClientBridgeClass.getDeclaredMethod("getWebView");
+                    method1.setAccessible(true);
+                    WebView webView1 = (WebView) method1.invoke(contentsClientBridge);
+                    if (webView1 != null) {
+                        webView1.setWebContentsDebuggingEnabled(true);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }
 
