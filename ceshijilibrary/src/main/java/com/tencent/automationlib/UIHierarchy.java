@@ -132,8 +132,6 @@ public class UIHierarchy {
     public static String generateHierarchyJson(View view) throws JSONException {
         JSONObject rootJson = new JSONObject();
         if(view instanceof WebView){
-            ((WebView) view).addJavascriptInterface(JsBridge.getInstance(),"JsBridge");
-            JsBridge.getInstance().injectJs(view);
             rootJson.put("wvDom",JsBridge.getInstance().getWebViewJson());
         }
         try {
@@ -166,8 +164,6 @@ public class UIHierarchy {
             for (int i = 0; i < viewGroup.getChildCount(); i++) {
                 View child = viewGroup.getChildAt(i);
                 if(child instanceof WebView){
-                    ((WebView) child).addJavascriptInterface(JsBridge.getInstance(),"JsBridge");
-                    JsBridge.getInstance().injectJs(child);
                     childJson.put("wvDom",JsBridge.getInstance().getWebViewJson());
                 }
                 try {

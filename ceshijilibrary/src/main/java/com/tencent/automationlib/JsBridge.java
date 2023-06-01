@@ -4,10 +4,14 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
+import android.widget.Toast;
+
 import androidx.annotation.Keep;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.nio.charset.StandardCharsets;
 
 public class JsBridge {
     private static final String TAG = "JsBridge";
@@ -38,6 +42,7 @@ public class JsBridge {
             webView.evaluateJavascript(injectJs, value -> {
                 // value 就是该页面的 DOM 树，可以将其转换为 JSON 格式
                 try{
+                    Log.e(TAG,"get receive: " + value);
                     json = new JSONObject(value);
                 } catch (JSONException e){
                     e.printStackTrace();
@@ -54,12 +59,13 @@ public class JsBridge {
 
     // 示例，这里注入的是hook的js
     private void getJs() {
-        injectJs = "(function() { return JSON.stringify({"
-                + "title: document.title"
-                + "html: document.getElementsByTagName('html')[0].outerHTML,"
-                + "}); "
+        injectJs = "javascript:(function() {"
+                + "var str=JSON.stringify(document.getElementsByTagName('html')[0].outerHTML);"
+                + "var decodedStr=unescape(str);"
+                + "return decodedStr;"
                 + "})();";
     }
+
 
     // 这里接收下Js传入的数据
     @JavascriptInterface
