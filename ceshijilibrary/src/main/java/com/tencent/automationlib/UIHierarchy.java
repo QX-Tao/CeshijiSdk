@@ -131,9 +131,6 @@ public class UIHierarchy {
     // 遍历控件树生成JSON格式字符串
     public static String generateHierarchyJson(View view) throws JSONException {
         JSONObject rootJson = new JSONObject();
-        if(view instanceof WebView){
-            rootJson.put("wvDom",JsBridge.getInstance().getWebViewJson());
-        }
         try {
             rootJson.put("id", System.identityHashCode(view));
             rootJson.put("class", view.getClass().getName());
@@ -149,6 +146,9 @@ public class UIHierarchy {
             rootJson.put("isSelected", view.isSelected());
             rootJson.put("canScroll", view.canScrollHorizontally(-1)+" "+view.canScrollHorizontally(1)+" "+view.canScrollVertically(-1)+" "+view.canScrollVertically(1));
             rootJson.put("children", generateChildrenJson(view));
+            if(view instanceof WebView){
+                rootJson.put("wvDom",JsBridge.getInstance().getWebViewDOM());
+            }
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -163,9 +163,6 @@ public class UIHierarchy {
             JSONObject childJson = new JSONObject();
             for (int i = 0; i < viewGroup.getChildCount(); i++) {
                 View child = viewGroup.getChildAt(i);
-                if(child instanceof WebView){
-                    childJson.put("wvDom",JsBridge.getInstance().getWebViewJson());
-                }
                 try {
                     childJson.put("id", System.identityHashCode(child));
                     childJson.put("class", child.getClass().getName());
@@ -181,6 +178,9 @@ public class UIHierarchy {
                     childJson.put("isSelected", child.isSelected());
                     childJson.put("canScroll", child.canScrollHorizontally(-1)+" "+child.canScrollHorizontally(1)+" "+child.canScrollVertically(-1)+" "+child.canScrollVertically(1));
                     childJson.put("children", generateChildrenJson(child));
+                    if(child instanceof WebView){
+                        childJson.put("wvDom",JsBridge.getInstance().getWebViewDOM());
+                    }
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }

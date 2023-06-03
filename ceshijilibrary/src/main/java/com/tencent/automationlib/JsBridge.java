@@ -4,21 +4,18 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
-import android.widget.Toast;
 
 import androidx.annotation.Keep;
 
-import org.json.JSONException;
+import org.apache.commons.text.StringEscapeUtils;
 import org.json.JSONObject;
-
-import java.nio.charset.StandardCharsets;
 
 public class JsBridge {
     private static final String TAG = "JsBridge";
     private static volatile JsBridge jsBridge;
 
     private String injectJs;
-    private JSONObject json;
+    private String vmValue;
 
     public static JsBridge getInstance() {
         if (jsBridge == null) {
@@ -41,31 +38,31 @@ public class JsBridge {
             // 将Js注入进去
             webView.evaluateJavascript(injectJs, value -> {
                 // value 就是该页面的 DOM 树，可以将其转换为 JSON 格式
-                try{
-                    Log.e(TAG,"get receive: " + value);
-                    json = new JSONObject(value);
-                } catch (JSONException e){
-                    e.printStackTrace();
-                }
+                vmValue = StringEscapeUtils.unescapeJava(value);
+                Log.e(TAG,"get wv receive: " + vmValue);
+            });
+        } else if (web instanceof com.tencent.smtt.sdk.WebView ) {
+            final com.tencent.smtt.sdk.WebView webView = (com.tencent.smtt.sdk.WebView) web;
+            webView.getSettings().setDomStorageEnabled(true);
+            webView.evaluateJavascript(injectJs, value -> {
+                vmValue = StringEscapeUtils.unescapeJava(value);
+                Log.e(TAG,"get x5wv receive: " + vmValue);
             });
         } else {
-            // todo: may be X5WebView, UCWebView...
+          // todo: other WebView
         }
     }
 
-    public JSONObject getWebViewJson(){
-        return json;
+    public String getWebViewDOM(){
+        return vmValue;
     }
 
     // 示例，这里注入的是hook的js
     private void getJs() {
         injectJs = "javascript:(function() {"
-                + "var str=JSON.stringify(document.getElementsByTagName('html')[0].outerHTML);"
-                + "var decodedStr=unescape(str);"
-                + "return decodedStr;"
+                + "return document.getElementsByTagName('html')[0].outerHTML;"
                 + "})();";
     }
-
 
     // 这里接收下Js传入的数据
     @JavascriptInterface
