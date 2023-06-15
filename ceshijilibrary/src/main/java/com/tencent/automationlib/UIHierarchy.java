@@ -3,6 +3,7 @@ package com.tencent.automationlib;
 import static android.content.ContentValues.TAG;
 
 import android.content.Context;
+import android.graphics.Point;
 import android.graphics.Rect;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
@@ -164,7 +165,7 @@ public class UIHierarchy {
         JSONObject rootJson = new JSONObject();
         try {
             rootJson.put("visible", view.getVisibility());
-            rootJson.put("resourceId", view.getContext().getResources().getResourceEntryName(System.identityHashCode(view)));
+            rootJson.put("resourceId", System.identityHashCode(view));
             rootJson.put("class", view.getClass().getName());
             rootJson.put("text", view instanceof TextView ? ((TextView) view).getText().toString() : "");
             rootJson.put("contentDescription", view.getContentDescription() != null ? view.getContentDescription().toString() : "");
@@ -176,10 +177,9 @@ public class UIHierarchy {
             rootJson.put("isVisibleToUser", isVisibleToUser(view));
             rootJson.put("isSelected", view.isSelected());
             rootJson.put("isEnabled", view.isEnabled());
-            rootJson.put("boundsInScreen", "(" + view.getLeft() + " " + view.getHeight());
-            Rect bounds = new Rect();
-            view.getGlobalVisibleRect(bounds);
-            rootJson.put("getBoundsInScreen", bounds.toString().substring(4));
+            int[] location = new int[2];
+            view.getLocationOnScreen(location);
+            rootJson.put("boundsInScreen", "("+(location[0])+", "+(location[1])+" - "+(view.getWidth()+location[0])+", "+(view.getHeight()+location[1])+")");
             if(view instanceof WebView){
                 rootJson.put("wvDom",JsBridge.getInstance().getWebViewDOM());
             }
@@ -200,7 +200,7 @@ public class UIHierarchy {
                 JSONObject childJson = new JSONObject();
                 try {
                     childJson.put("visible", child.getVisibility());
-                    childJson.put("resourceId", child.getContext().getResources().getResourceEntryName(System.identityHashCode(child)));
+                    childJson.put("resourceId", System.identityHashCode(child));
                     childJson.put("class", child.getClass().getName());
                     childJson.put("text", child instanceof TextView ? ((TextView) child).getText().toString() : "");
                     childJson.put("contentDescription", child.getContentDescription() != null ? child.getContentDescription().toString() : "");
@@ -212,10 +212,9 @@ public class UIHierarchy {
                     childJson.put("isVisibleToUser", isVisibleToUser(child));
                     childJson.put("isSelected", child.isSelected());
                     childJson.put("isEnabled", child.isEnabled());
-                    childJson.put("boundsInScreen", "(" + child.getLeft() + " " + child.getHeight());
-                    Rect bounds = new Rect();
-                    child.getGlobalVisibleRect(bounds);
-                    childJson.put("getBoundsInScreen", bounds.toString().substring(4));
+                    int[] location = new int[2];
+                    child.getLocationOnScreen(location);
+                    childJson.put("boundsInScreen", "("+(location[0])+", "+(location[1])+" - "+(child.getWidth()+location[0])+", "+(child.getHeight()+location[1])+")");
                     if(child instanceof WebView){
                         childJson.put("wvDom",JsBridge.getInstance().getWebViewDOM());
                     }
