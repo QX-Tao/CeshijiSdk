@@ -8,7 +8,6 @@ import android.webkit.WebView;
 import androidx.annotation.Keep;
 
 import org.apache.commons.text.StringEscapeUtils;
-import org.json.JSONObject;
 
 public class JsBridge {
     private static final String TAG = "JsBridge";
@@ -40,13 +39,6 @@ public class JsBridge {
                 // value 就是该页面的 DOM 树，可以将其转换为 JSON 格式
                 vmValue = StringEscapeUtils.unescapeJava(value);
                 Log.e(TAG,"get wv receive: " + vmValue);
-            });
-        } else if (web instanceof com.tencent.smtt.sdk.WebView ) {
-            final com.tencent.smtt.sdk.WebView webView = (com.tencent.smtt.sdk.WebView) web;
-            webView.getSettings().setDomStorageEnabled(true);
-            webView.evaluateJavascript(injectJs, value -> {
-                vmValue = StringEscapeUtils.unescapeJava(value);
-                Log.e(TAG,"get x5wv receive: " + vmValue);
             });
         } else {
           // todo: other WebView

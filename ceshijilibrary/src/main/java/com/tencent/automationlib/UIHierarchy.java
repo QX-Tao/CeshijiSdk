@@ -3,6 +3,7 @@ package com.tencent.automationlib;
 import static android.content.ContentValues.TAG;
 
 import android.content.Context;
+import android.graphics.Rect;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -15,6 +16,10 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -49,7 +54,7 @@ public class UIHierarchy {
             windowManagerClassName = "android.view.WindowManagerGlobal";
         } else {
             windowManagerClassName = "android.view.WindowManagerImpl";
-        }try {
+        } try {
             windowManager = Class.forName(windowManagerClassName);
         }catch (Exception e){
             e.printStackTrace();
@@ -88,13 +93,14 @@ public class UIHierarchy {
         final String clazzName = view.getClass().getName();
         if (!TextUtils.isEmpty(clazzName)) {
             return DECOR_VIEWS.contains(clazzName)
+                    || clazzName.endsWith("PopupDecorView")
                     || clazzName.endsWith("ScrollView")
                     || clazzName.endsWith("ViewPager");
         }
         return false;
     }
 
-    public static View getRecentDecorView(View[] views) {
+    public static View getRecentDecorView(View[] views) throws JSONException, IOException {
         if (views == null) {
             return null;
         }
@@ -110,18 +116,43 @@ public class UIHierarchy {
         return getRecentContainer(decorViews);
     }
 
-    private static View getRecentContainer(View[] views) {
+    private static View getRecentContainer(View[] views) throws IOException, JSONException {
         View container = null;
         long drawingTime = 0;
 
         if (views == null) {
+            Log.d("TAG getRecentContainer","views null");
             return null;
         }
 
+        for (int i = 0; i<views.length; i++){
+            if(views[i] != null){
+                String nr= UIHierarchy.generateHierarchyJson(views[i]);
+                File outPath = views[i].getContext().getExternalFilesDir("/Tencent/ceshiji");
+                String SDPath = outPath.getAbsolutePath();
+                File accessibleSaveFile = new File(SDPath + i);
+                RandomAccessFile accessRaf = new RandomAccessFile(accessibleSaveFile, "rwd");
+                accessRaf.seek(accessibleSaveFile.length());
+                accessRaf.write(nr.getBytes());
+                accessRaf.close();
+            }
+        }
+
         for (View view : views) {
-            if (view != null && view.isShown() && view.hasWindowFocus() && view.getDrawingTime() > drawingTime) {
-                container = view;
-                drawingTime = view.getDrawingTime();
+            if (view != null) {
+                boolean isShown = view.isShown();
+                boolean hasWindowFocus = view.hasWindowFocus();
+                boolean isFocused = view.isFocused();
+                boolean isVisibleToUser = isVisibleToUser(view);
+                boolean drawBigger = view.getDrawingTime() > drawingTime;
+                Log.d("TAG VIEW NOT NULL",String.valueOf(isShown) + hasWindowFocus + isFocused + isVisibleToUser + drawBigger);
+                Log.d("TAG VIEW NOT NULL VIEW",view.toString());
+                if (isShown && hasWindowFocus) {
+                    container = view;
+//                    drawingTime = view.getDrawingTime();
+                }
+            } else {
+                Log.d("TAG VIEW","getRecentContainer view is null");
             }
         }
         return container;
@@ -129,26 +160,30 @@ public class UIHierarchy {
 
 
     // 遍历控件树生成JSON格式字符串
-    public static String generateHierarchyJson(View view) throws JSONException {
+    public static String generateHierarchyJson(View view) {
         JSONObject rootJson = new JSONObject();
         try {
-            rootJson.put("id", System.identityHashCode(view));
+            rootJson.put("visible", view.getVisibility());
+            rootJson.put("resourceId", view.getContext().getResources().getResourceEntryName(System.identityHashCode(view)));
             rootJson.put("class", view.getClass().getName());
             rootJson.put("text", view instanceof TextView ? ((TextView) view).getText().toString() : "");
-            rootJson.put("ContentDescription", view.getContentDescription() != null ? view.getContentDescription().toString() : "");
-            rootJson.put("visible", view.getVisibility());
-            rootJson.put("isVisibleToUser", isVisibleToUser(view));
-            rootJson.put("coord",view.getX() + " " + view.getY());
-            rootJson.put("dimensions", view.getWidth() + " " + view.getHeight());
+            rootJson.put("contentDescription", view.getContentDescription() != null ? view.getContentDescription().toString() : "");
+            rootJson.put("canScroll", view.canScrollHorizontally(-1) || view.canScrollHorizontally(1) || view.canScrollVertically(-1) || view.canScrollVertically(1));
             rootJson.put("isClickable", view.isClickable());
-            rootJson.put("isFocusable", view.isFocusable());
             rootJson.put("isLongClickable", view.isLongClickable());
+            rootJson.put("isFocusable", view.isFocusable());
+            rootJson.put("isFocused", view.isFocused());
+            rootJson.put("isVisibleToUser", isVisibleToUser(view));
             rootJson.put("isSelected", view.isSelected());
-            rootJson.put("canScroll", view.canScrollHorizontally(-1)+" "+view.canScrollHorizontally(1)+" "+view.canScrollVertically(-1)+" "+view.canScrollVertically(1));
-            rootJson.put("children", generateChildrenJson(view));
+            rootJson.put("isEnabled", view.isEnabled());
+            rootJson.put("boundsInScreen", "(" + view.getLeft() + " " + view.getHeight());
+            Rect bounds = new Rect();
+            view.getGlobalVisibleRect(bounds);
+            rootJson.put("getBoundsInScreen", bounds.toString().substring(4));
             if(view instanceof WebView){
                 rootJson.put("wvDom",JsBridge.getInstance().getWebViewDOM());
             }
+            rootJson.put("children", generateChildrenJson(view));
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -160,27 +195,31 @@ public class UIHierarchy {
         JSONArray childrenJson = new JSONArray();
         if (view instanceof ViewGroup) {
             ViewGroup viewGroup = (ViewGroup) view;
-            JSONObject childJson = new JSONObject();
             for (int i = 0; i < viewGroup.getChildCount(); i++) {
                 View child = viewGroup.getChildAt(i);
+                JSONObject childJson = new JSONObject();
                 try {
-                    childJson.put("id", System.identityHashCode(child));
+                    childJson.put("visible", child.getVisibility());
+                    childJson.put("resourceId", child.getContext().getResources().getResourceEntryName(System.identityHashCode(child)));
                     childJson.put("class", child.getClass().getName());
                     childJson.put("text", child instanceof TextView ? ((TextView) child).getText().toString() : "");
-                    childJson.put("ContentDescription",child.getContentDescription() != null ? child.getContentDescription().toString() : "");
-                    childJson.put("visible", child.getVisibility());
-                    childJson.put("isVisibleToUser", isVisibleToUser(view));
-                    childJson.put("coord", child.getX() + " " + child.getY());
-                    childJson.put("dimensions", child.getWidth() + " " + child.getHeight());
+                    childJson.put("contentDescription", child.getContentDescription() != null ? child.getContentDescription().toString() : "");
+                    childJson.put("canScroll", child.canScrollHorizontally(-1) || child.canScrollHorizontally(1) || child.canScrollVertically(-1) || child.canScrollVertically(1));
                     childJson.put("isClickable", child.isClickable());
-                    childJson.put("isFocusable", child.isFocusable());
                     childJson.put("isLongClickable", child.isLongClickable());
+                    childJson.put("isFocusable", child.isFocusable());
+                    childJson.put("isFocused", child.isFocused());
+                    childJson.put("isVisibleToUser", isVisibleToUser(child));
                     childJson.put("isSelected", child.isSelected());
-                    childJson.put("canScroll", child.canScrollHorizontally(-1)+" "+child.canScrollHorizontally(1)+" "+child.canScrollVertically(-1)+" "+child.canScrollVertically(1));
-                    childJson.put("children", generateChildrenJson(child));
+                    childJson.put("isEnabled", child.isEnabled());
+                    childJson.put("boundsInScreen", "(" + child.getLeft() + " " + child.getHeight());
+                    Rect bounds = new Rect();
+                    child.getGlobalVisibleRect(bounds);
+                    childJson.put("getBoundsInScreen", bounds.toString().substring(4));
                     if(child instanceof WebView){
                         childJson.put("wvDom",JsBridge.getInstance().getWebViewDOM());
                     }
+                    childJson.put("children", generateChildrenJson(child));
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -195,8 +234,10 @@ public class UIHierarchy {
             Class<?> activityThreadClass = Class.forName("android.app.ActivityThread");
             Method currentApplicationMethod = activityThreadClass.getMethod("currentApplication");
             Object currentApplication = currentApplicationMethod.invoke(null);
-            Method getPackageNameMethod = currentApplication.getClass().getMethod("getPackageName");
-            return (String) getPackageNameMethod.invoke(currentApplication);
+            if (currentApplication != null) {
+                Method getPackageNameMethod = currentApplication.getClass().getMethod("getPackageName");
+                return (String) getPackageNameMethod.invoke(currentApplication);
+            } else Log.e("TAG getPackageName", "currentApplication is null");
         } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException |
                  InvocationTargetException e) {
             e.printStackTrace();
@@ -276,33 +317,6 @@ public class UIHierarchy {
             e.printStackTrace();
         }
         return context;
-    }
-
-    // Hook WebView的控件ID
-    private static void hookWebView(WebView webView) {
-        try {
-            Class<?> clazz = Class.forName("android.webkit.WebView");
-            Method method = clazz.getDeclaredMethod("getWebViewProvider");
-            method.setAccessible(true);
-            Object webViewProvider = method.invoke(webView);
-            if (webViewProvider != null) {
-                Class<?> webViewProviderClass = Class.forName("android.webkit.WebViewProvider");
-                Field field = webViewProviderClass.getDeclaredField("mContentsClientBridge");
-                field.setAccessible(true);
-                Object contentsClientBridge = field.get(webViewProvider);
-                if (contentsClientBridge != null) {
-                    Class<?> contentsClientBridgeClass = Class.forName("android.webkit.WebViewClient$WebViewClientCompatImpl$ContentsClientBridge");
-                    Method method1 = contentsClientBridgeClass.getDeclaredMethod("getWebView");
-                    method1.setAccessible(true);
-                    WebView webView1 = (WebView) method1.invoke(contentsClientBridge);
-                    if (webView1 != null) {
-                        webView1.setWebContentsDebuggingEnabled(true);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 }
 

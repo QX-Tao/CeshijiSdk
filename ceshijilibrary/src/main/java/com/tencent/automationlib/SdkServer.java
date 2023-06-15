@@ -5,7 +5,10 @@ import android.view.View;
 
 import org.json.JSONException;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.net.Socket;
 
 
@@ -13,7 +16,6 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
-import java.util.Arrays;
 
 // 服务端
 public class SdkServer {
@@ -26,13 +28,16 @@ public class SdkServer {
             throw new RuntimeException(e);
         }
     }
-    public String handleMessage(String message) throws JSONException {
+    public String handleMessage(String message) throws JSONException, IOException {
         // TODO: 处理来自无障碍服务App的消息
         if("开始收集".equals(message)){
             View[] windowDecorViews = UIHierarchy.getWindowDecorViews();
-            String viewsString = UIHierarchy.generateHierarchyJson(UIHierarchy.getRecentDecorView(windowDecorViews));
-            Log.d("TAG", "JSON: " + viewsString);
-            return viewsString;
+            if( windowDecorViews == null){
+                Log.d("TAG windowDecorViews", "windowDecorViews == null");
+                return null;
+            }
+            if(UIHierarchy.getRecentDecorView(windowDecorViews) == null) return null;
+            return UIHierarchy.generateHierarchyJson(UIHierarchy.getRecentDecorView(windowDecorViews));
         }
         return null;
     }
@@ -47,14 +52,24 @@ public class SdkServer {
                 System.out.println("客户端已连接");
                 in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
                 String clientMsg = in.readLine();
+                Log.d("TAG clientMsg", String.valueOf(clientMsg));
                 System.out.println("接收到来自客户端的消息：" + clientMsg);
                 if (clientMsg.length()> 0) {
                     String ans = handleMessage(clientMsg);
+                    Log.d("TAG SDK JSON", String.valueOf(ans));
                     String packageName = UIHierarchy.getPackageName();
+                    Log.d("TAG SDK PKG", String.valueOf(packageName));
+                    if (ans == null){
+                        Log.e("TAG IN SDK", "SDK JSON NULL");
+                        ans = "error while getting sdk json: ans is null";
+                    }
+                    if (packageName == null){
+                        Log.e("TAG IN SDK", "PKG NULL");
+                        packageName = "null";
+                    }
                     PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
                     out.println(packageName);
                     out.println(ans);
-
                 }
             }
         } catch (IOException | JSONException e) {
