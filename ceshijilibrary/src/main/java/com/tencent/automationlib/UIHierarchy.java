@@ -3,6 +3,7 @@ package com.tencent.automationlib;
 import static android.content.ContentValues.TAG;
 
 import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.text.TextUtils;
@@ -165,7 +166,13 @@ public class UIHierarchy {
         JSONObject rootJson = new JSONObject();
         try {
             rootJson.put("visible", view.getVisibility());
-            rootJson.put("resourceId", System.identityHashCode(view));
+            String resourceId = null;
+            try {
+                resourceId = view.getContext().getResources().getResourceName(view.getId());
+            } catch (Resources.NotFoundException ignored){
+            } finally {
+                if(resourceId != null) rootJson.put("resourceId", resourceId);
+            }
             rootJson.put("class", view.getClass().getName());
             rootJson.put("text", view instanceof TextView ? ((TextView) view).getText().toString() : "");
             rootJson.put("contentDescription", view.getContentDescription() != null ? view.getContentDescription().toString() : "");
@@ -183,7 +190,9 @@ public class UIHierarchy {
             if(view instanceof WebView){
                 rootJson.put("wvDom",JsBridge.getInstance().getWebViewDOM());
             }
-            rootJson.put("children", generateChildrenJson(view));
+            if (view instanceof ViewGroup && ((ViewGroup) view).getChildCount() > 0) {
+                rootJson.put("children", generateChildrenJson(view));
+            }
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -200,7 +209,13 @@ public class UIHierarchy {
                 JSONObject childJson = new JSONObject();
                 try {
                     childJson.put("visible", child.getVisibility());
-                    childJson.put("resourceId", System.identityHashCode(child));
+                    String resourceId = null;
+                    try {
+                        resourceId = child.getContext().getResources().getResourceName(child.getId());
+                    } catch (Resources.NotFoundException ignored){
+                    } finally {
+                        if(resourceId != null) childJson.put("resourceId", resourceId);
+                    }
                     childJson.put("class", child.getClass().getName());
                     childJson.put("text", child instanceof TextView ? ((TextView) child).getText().toString() : "");
                     childJson.put("contentDescription", child.getContentDescription() != null ? child.getContentDescription().toString() : "");
@@ -218,7 +233,9 @@ public class UIHierarchy {
                     if(child instanceof WebView){
                         childJson.put("wvDom",JsBridge.getInstance().getWebViewDOM());
                     }
-                    childJson.put("children", generateChildrenJson(child));
+                    if (child instanceof ViewGroup && ((ViewGroup) child).getChildCount() > 0) {
+                        childJson.put("children", generateChildrenJson(child));
+                    }
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
