@@ -107,6 +107,19 @@ public class UIHierarchy {
             return null;
         }
 
+//        for (int i = 0; i<views.length; i++){
+//            if(views[i] != null){
+//                String nr= UIHierarchy.generateHierarchyJson(views[i]);
+//                File outPath = views[i].getContext().getExternalFilesDir("/Tencent/ceshiji");
+//                String SDPath = outPath.getAbsolutePath();
+//                File accessibleSaveFile = new File(SDPath + i);
+//                RandomAccessFile accessRaf = new RandomAccessFile(accessibleSaveFile, "rwd");
+//                accessRaf.seek(accessibleSaveFile.length());
+//                accessRaf.write(nr.getBytes());
+//                accessRaf.close();
+//            }
+//        }
+
         final View[] decorViews = new View[views.length];
         int i = 0;
         for (View view : views) {
@@ -127,18 +140,7 @@ public class UIHierarchy {
             return null;
         }
 
-        for (int i = 0; i<views.length; i++){
-            if(views[i] != null){
-                String nr= UIHierarchy.generateHierarchyJson(views[i]);
-                File outPath = views[i].getContext().getExternalFilesDir("/Tencent/ceshiji");
-                String SDPath = outPath.getAbsolutePath();
-                File accessibleSaveFile = new File(SDPath + i);
-                RandomAccessFile accessRaf = new RandomAccessFile(accessibleSaveFile, "rwd");
-                accessRaf.seek(accessibleSaveFile.length());
-                accessRaf.write(nr.getBytes());
-                accessRaf.close();
-            }
-        }
+
 
         for (View view : views) {
             if (view != null) {

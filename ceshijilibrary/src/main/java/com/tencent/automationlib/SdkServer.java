@@ -36,8 +36,9 @@ public class SdkServer {
                 Log.d("TAG windowDecorViews", "windowDecorViews == null");
                 return null;
             }
-            if(UIHierarchy.getRecentDecorView(windowDecorViews) == null) return null;
-            return UIHierarchy.generateHierarchyJson(UIHierarchy.getRecentDecorView(windowDecorViews));
+            View view = UIHierarchy.getRecentDecorView(windowDecorViews);
+            if(view == null) return null;
+            return UIHierarchy.generateHierarchyJson(view);
         }
         return null;
     }
