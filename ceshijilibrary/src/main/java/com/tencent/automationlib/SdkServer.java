@@ -38,7 +38,7 @@ public class SdkServer {
             }
             View view = UIHierarchy.getRecentDecorView(windowDecorViews);
             if(view == null) return null;
-            return UIHierarchy.generateHierarchyJson(view);
+            return UIHierarchy.generateHierarchyJson(view).toString();
         }
         return null;
     }

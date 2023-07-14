@@ -162,12 +162,13 @@ public class UIHierarchy {
         return container;
     }
 
-
     // 遍历控件树生成JSON格式字符串
-    public static String generateHierarchyJson(View view) {
+    public static JSONObject generateHierarchyJson(View view) {
+        if (view == null) return null;
         JSONObject rootJson = new JSONObject();
         try {
             rootJson.put("visible", view.getVisibility());
+            rootJson.put("isImportantForAccessibility",view.isImportantForAccessibility());
             String resourceId = null;
             try {
                 resourceId = view.getContext().getResources().getResourceName(view.getId());
@@ -192,59 +193,25 @@ public class UIHierarchy {
             if(view instanceof WebView){
                 rootJson.put("wvDom",JsBridge.getInstance().getWebViewDOM());
             }
+
+            JSONArray children = new JSONArray();
             if (view instanceof ViewGroup && ((ViewGroup) view).getChildCount() > 0) {
-                rootJson.put("children", generateChildrenJson(view));
+                for (int i = 0; i < ((ViewGroup) view).getChildCount(); i++){
+                    ViewGroup viewGroup = (ViewGroup) view;
+                    View child = viewGroup.getChildAt(i);
+                    JSONObject childJson = generateHierarchyJson(child);
+                    if (childJson != null && childJson.length() > 0){
+                        children.put(childJson);
+                    }
+                }
+            }
+            if (children.length() > 0) {
+                rootJson.put("children", children);
             }
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        return rootJson.toString();
-    }
-
-    // 嵌套遍历所有View，最终生成JSON字符串
-    private static JSONArray generateChildrenJson(View view) throws JSONException {
-        JSONArray childrenJson = new JSONArray();
-        if (view instanceof ViewGroup) {
-            ViewGroup viewGroup = (ViewGroup) view;
-            for (int i = 0; i < viewGroup.getChildCount(); i++) {
-                View child = viewGroup.getChildAt(i);
-                JSONObject childJson = new JSONObject();
-                try {
-                    childJson.put("visible", child.getVisibility());
-                    String resourceId = null;
-                    try {
-                        resourceId = child.getContext().getResources().getResourceName(child.getId());
-                    } catch (Resources.NotFoundException ignored){
-                    } finally {
-                        if(resourceId != null) childJson.put("resourceId", resourceId);
-                    }
-                    childJson.put("class", child.getClass().getName());
-                    childJson.put("text", child instanceof TextView ? ((TextView) child).getText().toString() : "");
-                    childJson.put("contentDescription", child.getContentDescription() != null ? child.getContentDescription().toString() : "");
-                    childJson.put("canScroll", child.canScrollHorizontally(-1) || child.canScrollHorizontally(1) || child.canScrollVertically(-1) || child.canScrollVertically(1));
-                    childJson.put("isClickable", child.isClickable());
-                    childJson.put("isLongClickable", child.isLongClickable());
-                    childJson.put("isFocusable", child.isFocusable());
-                    childJson.put("isFocused", child.isFocused());
-                    childJson.put("isVisibleToUser", isVisibleToUser(child));
-                    childJson.put("isSelected", child.isSelected());
-                    childJson.put("isEnabled", child.isEnabled());
-                    int[] location = new int[2];
-                    child.getLocationOnScreen(location);
-                    childJson.put("boundsInScreen", "("+(location[0])+", "+(location[1])+" - "+(child.getWidth()+location[0])+", "+(child.getHeight()+location[1])+")");
-                    if(child instanceof WebView){
-                        childJson.put("wvDom",JsBridge.getInstance().getWebViewDOM());
-                    }
-                    if (child instanceof ViewGroup && ((ViewGroup) child).getChildCount() > 0) {
-                        childJson.put("children", generateChildrenJson(child));
-                    }
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-                childrenJson.put(childJson);
-            }
-        }
-        return childrenJson;
+        return rootJson;
     }
 
     public static String getPackageName() {
