@@ -165,9 +165,9 @@ public class UIHierarchy {
     // 遍历控件树生成JSON格式字符串
     public static JSONObject generateHierarchyJson(View view) {
         if (view == null) return null;
+        if (view.getVisibility() == View.INVISIBLE || view.getVisibility() == View.GONE) return null;
         JSONObject rootJson = new JSONObject();
         try {
-            rootJson.put("visible", view.getVisibility());
             rootJson.put("isImportantForAccessibility",view.isImportantForAccessibility());
             String resourceId = null;
             try {
@@ -176,7 +176,7 @@ public class UIHierarchy {
             } finally {
                 if(resourceId != null) rootJson.put("resourceId", resourceId);
             }
-            rootJson.put("class", view.getClass().getName());
+            rootJson.put("class", view.getAccessibilityClassName());
             rootJson.put("text", view instanceof TextView ? ((TextView) view).getText().toString() : "");
             rootJson.put("contentDescription", view.getContentDescription() != null ? view.getContentDescription().toString() : "");
             rootJson.put("canScroll", view.canScrollHorizontally(-1) || view.canScrollHorizontally(1) || view.canScrollVertically(-1) || view.canScrollVertically(1));
