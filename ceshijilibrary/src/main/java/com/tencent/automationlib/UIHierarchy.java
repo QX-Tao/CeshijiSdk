@@ -4,8 +4,6 @@ import static android.content.ContentValues.TAG;
 
 import android.content.Context;
 import android.content.res.Resources;
-import android.graphics.Point;
-import android.graphics.Rect;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -18,10 +16,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

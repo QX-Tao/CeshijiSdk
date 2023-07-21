@@ -5,10 +5,7 @@ import android.view.View;
 
 import org.json.JSONException;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.net.Socket;
 
 
@@ -38,6 +35,12 @@ public class SdkServer {
             }
             View view = UIHierarchy.getRecentDecorView(windowDecorViews);
             if(view == null) return null;
+//            long startT = System.currentTimeMillis();
+//            try {
+//                UIHierarchy.generateHierarchyJson(view);
+//            } finally {
+//                Log.d("SDK cost time", (System.currentTimeMillis() - startT) + " ms");
+//            }
             return UIHierarchy.generateHierarchyJson(view).toString();
         }
         return null;
