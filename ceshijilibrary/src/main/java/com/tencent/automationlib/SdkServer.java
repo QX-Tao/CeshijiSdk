@@ -2,6 +2,7 @@ package com.tencent.automationlib;
 
 import android.util.Log;
 import android.view.View;
+import android.view.accessibility.AccessibilityNodeInfo;
 
 import org.json.JSONException;
 
@@ -35,12 +36,7 @@ public class SdkServer {
             }
             View view = UIHierarchy.getRecentDecorView(windowDecorViews);
             if(view == null) return null;
-//            long startT = System.currentTimeMillis();
-//            try {
-//                UIHierarchy.generateHierarchyJson(view);
-//            } finally {
-//                Log.d("SDK cost time", (System.currentTimeMillis() - startT) + " ms");
-//            }
+            UIHierarchy.initAccessibleIsVisibleToUser();
             return UIHierarchy.generateHierarchyJson(view).toString();
         }
         return null;
@@ -60,6 +56,7 @@ public class SdkServer {
                 System.out.println("接收到来自客户端的消息：" + clientMsg);
                 if (clientMsg.length()> 0) {
                     String ans = handleMessage(clientMsg);
+//                    String ans = "handleMessage(clientMsg)";
                     Log.d("TAG SDK JSON", String.valueOf(ans));
                     String packageName = UIHierarchy.getPackageName();
                     Log.d("TAG SDK PKG", String.valueOf(packageName));

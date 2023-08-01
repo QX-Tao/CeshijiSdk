@@ -4,11 +4,13 @@ import static android.content.ContentValues.TAG;
 
 import android.content.Context;
 import android.content.res.Resources;
+import android.graphics.Rect;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.accessibility.AccessibilityNodeInfo;
 import android.webkit.WebView;
 import android.widget.TextView;
 
@@ -30,6 +32,7 @@ public class UIHierarchy {
     private static String windowManagerString;
     private static Class<?> windowManager = null;
     private static String windowManagerClassName;
+    private static  Method method;
 
     private static final List<String> DECOR_VIEWS = Arrays.asList(
             "com.android.internal.policy.DecorView",
@@ -209,6 +212,7 @@ public class UIHierarchy {
         return rootJson;
     }
 
+
     public static String getPackageName() {
         try {
             Class<?> activityThreadClass = Class.forName("android.app.ActivityThread");
@@ -225,13 +229,32 @@ public class UIHierarchy {
         return null;
     }
 
+    public static boolean isVisibleToUser(View view){
+        try {
+            boolean isVisible = (boolean) method.invoke(view);
+            return isVisible;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public static void initAccessibleIsVisibleToUser() {
+        try {
+            method = View.class.getDeclaredMethod("isVisibleToUser");
+            method.setAccessible(true);
+        }  catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     /**
      * 对指定的界面元素是否用户可见.
      *
      * @param view 界面元素
      * @return 可见返回true，否则返回false
      */
-    public static boolean isVisibleToUser(View view) {
+    public static boolean isVisibleToUser1(View view) {
         try {
             final int[] xyView = new int[2];
             final int[] xyParent = new int[2];
